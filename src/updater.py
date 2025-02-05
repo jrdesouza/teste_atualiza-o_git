@@ -40,26 +40,47 @@ class AutoUpdater:
         remote_version = self._get_remote_version()
         return remote_version and (remote_version != local_version)
 
+
     def perform_update(self):
         try:
-            # Atualiza via Git
-            subprocess.run(
+            result = subprocess.run(
                 ['git', 'pull', 'origin', self.config['BRANCH']],
                 cwd=self.repo_path,
-                check=True
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
             )
             print("✅ Atualização concluída")
+            print(result.stdout)
             return True
         except subprocess.CalledProcessError as e:
-            print(f"❌ Falha na atualização: {e}")
+            print(f"❌ Falha na atualização:\n{e.stderr}")
             return False
+
 
     def restart(self):
         try:
-            # Limpa buffers e força o reinício
-            sys.stdout.flush()
-            sys.stderr.flush()
-            os.execl(sys.executable, sys.executable, *sys.argv)
+            # Configuração multiplataforma robusta
+            python = sys.executable
+            args = [python, "-m", "src"]  # Executa como módulo
+
+            # Flags específicas por SO
+            kwargs = {}
+            if os.name == 'nt':
+                kwargs['creationflags'] = (
+                        subprocess.CREATE_NEW_PROCESS_GROUP |
+                        subprocess.DETACHED_PROCESS
+                )
+            else:
+                kwargs['start_new_session'] = True
+
+            # Inicia novo processo
+            subprocess.Popen(args, **kwargs)
+
+            # Encerra o processo atual
+            sys.exit(0)
+
         except Exception as e:
-            print(f"Erro crítico ao reiniciar: {e}")
-            sys.exit(1)(1)
+            print(f"🚨 Erro crítico no reinício: {e}")
+            sys.exit(1)

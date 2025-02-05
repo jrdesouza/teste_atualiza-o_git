@@ -1,3 +1,5 @@
+import sys
+
 from updater import AutoUpdater
 import time
 
@@ -7,7 +9,7 @@ def main():
 
     # Lógica principal do seu script
     while True:
-        print("Executando tarefas importantes...")
+        print("Executando tarefas importantes.......")
         time.sleep(5)
 
 
@@ -18,11 +20,14 @@ if __name__ == "__main__":
         if updater.check_update():
             print("🔍 Nova versão disponível!")
             if updater.perform_update():
-                print("Reiniciando aplicação...")
+                print("🔄 Reiniciando aplicação...")
                 updater.restart()
 
-        # Só executa o main() se não houve atualização
+        # Executa o main() apenas se não houve reinício
         main()
 
     except KeyboardInterrupt:
         print("\n🛑 Aplicação encerrada pelo usuário")
+    except Exception as e:
+        print(f"🚨 Erro não tratado: {e}")
+        sys.exit(1)
