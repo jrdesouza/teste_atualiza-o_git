@@ -9,7 +9,7 @@ def main():
 
     # Lógica principal do seu script
     while True:
-        print("Executando tarefas importanttes...")
+        print("Executando tareefas importanttes...")
         time.sleep(5)
 
 
