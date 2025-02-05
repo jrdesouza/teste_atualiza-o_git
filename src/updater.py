@@ -4,7 +4,7 @@ import json
 import requests
 import subprocess
 from pathlib import Path
-
+import base64
 
 class AutoUpdater:
     def __init__(self):
@@ -27,7 +27,10 @@ class AutoUpdater:
         try:
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
-                return response.json()['content'].strip()
+                # Decodifica o conteúdo base64
+                content_base64 = response.json()['content']
+                content_decoded = base64.b64decode(content_base64).decode('utf-8').strip()
+                return content_decoded
         except Exception as e:
             print(f"Erro ao verificar atualizações: {e}")
         return None
@@ -52,4 +55,11 @@ class AutoUpdater:
             return False
 
     def restart(self):
-        os.execv(sys.executable, ['python'] + sys.argv)
+        try:
+            # Limpa buffers e força o reinício
+            sys.stdout.flush()
+            sys.stderr.flush()
+            os.execl(sys.executable, sys.executable, *sys.argv)
+        except Exception as e:
+            print(f"Erro crítico ao reiniciar: {e}")
+            sys.exit(1)(1)

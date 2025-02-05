@@ -14,9 +14,15 @@ def main():
 if __name__ == "__main__":
     updater = AutoUpdater()
 
-    if updater.check_update():
-        print("🔍 Nova versão disponível!")
-        if updater.perform_update():
-            updater.restart()
+    try:
+        if updater.check_update():
+            print("🔍 Nova versão disponível!")
+            if updater.perform_update():
+                print("Reiniciando aplicação...")
+                updater.restart()
 
-    main()
+        # Só executa o main() se não houve atualização
+        main()
+
+    except KeyboardInterrupt:
+        print("\n🛑 Aplicação encerrada pelo usuário")
