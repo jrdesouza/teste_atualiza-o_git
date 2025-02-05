@@ -10,7 +10,17 @@ class AutoUpdater:
     def __init__(self):
         self.repo_path = Path(__file__).parent.parent
         self.config = self._load_config()
-        self._verify_git_config()  # Nova verificação
+        self._validate_config()  # Nova verificação
+        self._verify_git_config()
+
+    def _validate_config(self):
+        required_keys = ['REPO_OWNER', 'REPO_NAME', 'BRANCH', 'GITHUB_TOKEN']
+        missing = [key for key in required_keys if key not in self.config]
+
+        if missing:
+            print(f"🚨 Configuração incompleta. Chaves faltando: {', '.join(missing)}")
+            print("Por favor atualize o arquivo config.json")
+            sys.exit(1)
 
     def install_dependencies(self):
         """Instala/atualiza dependências do requirements.txt"""
@@ -58,12 +68,18 @@ class AutoUpdater:
 
     def _setup_git_repo(self):
         try:
-            # Inicializa repositório se necessário
+            # Verifica se todas as chaves necessárias existem
+            required_keys = ['REPO_OWNER', 'REPO_NAME', 'GITHUB_TOKEN']
+            for key in required_keys:
+                if key not in self.config:
+                    raise ValueError(f"Chave de configuração faltando: {key}")
+
+            # Configuração do repositório
+            repo_url = f"https://{self.config['GITHUB_TOKEN']}@github.com/{self.config['REPO_OWNER']}/{self.config['REPO_NAME']}.git"
+
+            # Resto do código permanece igual
             if not (self.repo_path / ".git").exists():
                 subprocess.run(['git', 'init'], cwd=self.repo_path, check=True)
-
-            # Adiciona remote com autenticação
-            repo_url = f"https://{self.config['GITHUB_TOKEN']}@github.com/{self.config['REPO_OWNER']}/{self.config['REPO_NAME']}.git"
 
             subprocess.run(
                 ['git', 'remote', 'add', 'origin', repo_url],
@@ -71,10 +87,8 @@ class AutoUpdater:
                 check=True
             )
 
-            print("✅ Repositório Git configurado")
-
-        except subprocess.CalledProcessError as e:
-            print(f"🚨 Falha na configuração do Git: {e.stderr}")
+        except Exception as e:
+            print(f"🚨 Erro na configuração do Git: {str(e)}")
             sys.exit(1)
 
     def _load_config(self):
