@@ -10,6 +10,46 @@ class AutoUpdater:
     def __init__(self):
         self.repo_path = Path(__file__).parent.parent
         self.config = self._load_config()
+        self._verify_git_config()  # Nova verificação
+
+    def _verify_git_config(self):
+        try:
+            # Verifica se o remote 'origin' existe
+            result = subprocess.run(
+                ['git', 'remote', 'get-url', 'origin'],
+                cwd=self.repo_path,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+
+            if result.returncode != 0:
+                print("⚠️ Configurando repositório Git...")
+                self._setup_git_repo()
+
+        except Exception as e:
+            print(f"Erro na verificação do Git: {e}")
+
+    def _setup_git_repo(self):
+        try:
+            # Inicializa repositório se necessário
+            if not (self.repo_path / ".git").exists():
+                subprocess.run(['git', 'init'], cwd=self.repo_path, check=True)
+
+            # Adiciona remote com autenticação
+            repo_url = f"https://{self.config['GITHUB_TOKEN']}@github.com/{self.config['REPO_OWNER']}/{self.config['REPO_NAME']}.git"
+
+            subprocess.run(
+                ['git', 'remote', 'add', 'origin', repo_url],
+                cwd=self.repo_path,
+                check=True
+            )
+
+            print("✅ Repositório Git configurado")
+
+        except subprocess.CalledProcessError as e:
+            print(f"🚨 Falha na configuração do Git: {e.stderr}")
+            sys.exit(1)
 
     def _load_config(self):
         config_path = self.repo_path / "config.json"
@@ -40,22 +80,26 @@ class AutoUpdater:
         remote_version = self._get_remote_version()
         return remote_version and (remote_version != local_version)
 
-
     def perform_update(self):
         try:
+            # Força a autenticação via token
+            repo_url = f"https://{self.config['GITHUB_TOKEN']}@github.com/{self.config['REPO_OWNER']}/{self.config['REPO_NAME']}.git"
+
             result = subprocess.run(
-                ['git', 'pull', 'origin', self.config['BRANCH']],
+                ['git', 'pull', repo_url, self.config['BRANCH']],
                 cwd=self.repo_path,
-                check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
+                check=True
             )
+
             print("✅ Atualização concluída")
             print(result.stdout)
             return True
+
         except subprocess.CalledProcessError as e:
-            print(f"❌ Falha na atualização:\n{e.stderr}")
+            print(f"❌ Erro na atualização:\n{e.stderr}")
             return False
 
 
