@@ -12,6 +12,32 @@ class AutoUpdater:
         self.config = self._load_config()
         self._verify_git_config()  # Nova verificação
 
+    def install_dependencies(self):
+        """Instala/atualiza dependências do requirements.txt"""
+        requirements_path = self.repo_path / 'requirements.txt'
+
+        if not requirements_path.exists():
+            print("⚠️ Arquivo requirements.txt não encontrado")
+            return False
+
+        try:
+            print("📦 Instalando/atualizando dependências...")
+            result = subprocess.run(
+                [sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'],
+                cwd=self.repo_path,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=True
+            )
+            print("✅ Dependências instaladas com sucesso")
+            print(result.stdout)
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Erro na instalação das dependências:\n{e.stderr}")
+            return False
+
+
     def _verify_git_config(self):
         try:
             # Verifica se o remote 'origin' existe
@@ -93,7 +119,7 @@ class AutoUpdater:
                 text=True,
                 check=True
             )
-
+            self.install_dependencies()
             print("✅ Atualização concluída")
             print(result.stdout)
             return True

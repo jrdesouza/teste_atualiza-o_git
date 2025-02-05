@@ -17,13 +17,15 @@ if __name__ == "__main__":
     updater = AutoUpdater()
 
     try:
+        # Instala dependências mesmo sem atualizações
+        updater.install_dependencies()
+
         if updater.check_update():
             print("🔍 Nova versão disponível!")
             if updater.perform_update():
                 print("🔄 Reiniciando aplicação...")
                 updater.restart()
 
-        # Executa o main() apenas se não houve reinício
         main()
 
     except KeyboardInterrupt:
