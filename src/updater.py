@@ -122,26 +122,59 @@ class AutoUpdater:
 
     def perform_update(self):
         try:
-            # Força a autenticação via token
-            repo_url = f"https://{self.config['GITHUB_TOKEN']}@github.com/{self.config['REPO_OWNER']}/{self.config['REPO_NAME']}.git"
+            # Passo 1: Remove todas as mudanças locais
+            subprocess.run(
+                ['git', 'reset', '--hard', 'HEAD'],
+                cwd=self.repo_path,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
 
+            # Passo 2: Limpa arquivos não rastreados e ignorados
+            subprocess.run(
+                ['git', 'clean', '-fdx'],  # -f: force, -d: directories, -x: inclui arquivos ignorados
+                cwd=self.repo_path,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+            # Passo 3: Atualiza do repositório remoto
             result = subprocess.run(
-                ['git', 'pull', repo_url, self.config['BRANCH']],
+                ['git', 'pull', 'origin', self.config['BRANCH']],
                 cwd=self.repo_path,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
                 check=True
             )
-            self.install_dependencies()
-            print("✅ Atualização concluída")
+
+            print("✅ Atualização concluída com sucesso")
             print(result.stdout)
             return True
 
         except subprocess.CalledProcessError as e:
-            print(f"❌ Erro na atualização:\n{e.stderr}")
+            print(f"❌ Falha crítica na atualização:\n{e.stderr}")
+            print("Tentando reparar o repositório...")
+            self._force_repair_repo()
             return False
 
+    def _force_repair_repo(self):
+        try:
+            print("⚙️ Executando reparo emergencial...")
+            # Remove o repositório local e reclona
+            subprocess.run(['rm', '-rf', '.git'], cwd=self.repo_path, check=True)
+            subprocess.run(
+                ['git', 'clone', self.config['REPO_URL'], '.'],
+                cwd=self.repo_path,
+                check=True
+            )
+            print("🔁 Repositório reconstruído com sucesso")
+            return True
+        except Exception as e:
+            print(f"🚨 Reparo falhou: {str(e)}")
+            return False
 
     def restart(self):
         try:
