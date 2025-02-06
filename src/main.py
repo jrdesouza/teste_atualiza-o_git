@@ -39,13 +39,10 @@ class AutoUpdater:
             return None
 
     def _restart(self):
-        """Chama o script de reinício externo."""
+        """Reinicia a aplicação."""
+        print("🔄 Reiniciando a aplicação...")
         python = sys.executable
-        restart_script = os.path.join(os.path.dirname(__file__), "restart.py")
-
-        print("🔄 Chamando script de reinício externo...")
-        subprocess.Popen([python, restart_script], close_fds=True, shell=True)
-        os._exit(0)
+        os.execv(python, [python] + sys.argv)
 
     def _download_file(self, file_path):
         headers = {'Authorization': f'token {self.config["GITHUB_TOKEN"]}'}
