@@ -2,5 +2,5 @@
 
 
 
-def app():
+def teste():
     return print("oi")

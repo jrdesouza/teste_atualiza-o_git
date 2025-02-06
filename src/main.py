@@ -140,7 +140,7 @@ class AutoUpdater:
             print(f"❌ Erro no push: {e}")
             return False
 
-from teste import app
+from app import teste
 def main():
     updater = AutoUpdater()
 
@@ -149,7 +149,7 @@ def main():
 
     # Seu código principal aqui
     print("Aplicação em execução...")
-    app()
+    teste()
     # (ex: loop principal, interface gráfica, etc.)
 
 
