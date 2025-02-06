@@ -77,8 +77,8 @@ class AutoUpdater:
                     return False
         return True
 
-    def _restart(self):
-        main()
+    # def _restart(self):
+    #     os.execv(sys.executable, ['python'] + sys.argv)
 
     def check_and_apply_updates(self):
         remote_version = self._get_remote_version()
@@ -88,7 +88,7 @@ class AutoUpdater:
                 with open(self.repo_path / 'version.txt', 'w') as f:
                     f.write(remote_version)
                 print("🔄 Reiniciando para aplicar atualizações...")
-                self._restart()
+                # self._restart()
 
     def push_update(self, commit_message="Auto-update"):
         if not self.is_admin:
