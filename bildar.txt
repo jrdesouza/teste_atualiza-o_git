@@ -1,0 +1,1 @@
+pyinstaller --onefile --icon=logo.ico --add-data "templates;templates" --add-data "static;static" --name TupiChat main9.py
