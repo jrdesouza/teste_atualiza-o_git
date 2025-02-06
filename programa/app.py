@@ -5,4 +5,4 @@ import time
 def teste():
     print("ola"
                  "")
-    time.sleep(10)
+    time.sleep(100)
