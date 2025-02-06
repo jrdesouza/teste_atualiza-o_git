@@ -3,6 +3,6 @@ import time
 
 
 def teste():
-    print("ola agr vai"
+    print("ola"
                  "")
     time.sleep(10)
