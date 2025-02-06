@@ -5,7 +5,7 @@ import requests
 import base64
 from pathlib import Path
 from programa.app import teste
-
+import subprocess
 
 class AutoUpdater:
     def __init__(self):
@@ -108,15 +108,27 @@ class AutoUpdater:
         return True
 
     def _restart(self):
-        """Reinicia o script atual."""
+        """Reinicia o script atual de forma confiável"""
         try:
             print("🔄 Reiniciando aplicação...")
-            os.execv(sys.executable, ['python'] + sys.argv)
-        except Exception as e:
-            print(f"❌ Erro ao reiniciar: {e}")
-            # Fallback: Encerra o processo atual e inicia um novo
-            os.spawnv(os.P_NOWAIT, sys.executable, ['python'] + sys.argv)
+
+            # Para Windows
+            if sys.platform.startswith('win'):
+                subprocess.Popen([
+                    sys.executable,
+                    *sys.argv
+                ], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+
+            # Para Linux/MacOS
+            else:
+                os.execv(sys.executable, ['python3'] + sys.argv)
+
             sys.exit(0)
+
+        except Exception as e:
+            print(f"❌ Falha crítica ao reiniciar: {e}")
+            print("⏳ Tente reiniciar manualmente o aplicativo.")
+            sys.exit(1)
 
     def check_and_apply_updates(self):
         remote_version = self._get_remote_version()
