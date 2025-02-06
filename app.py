@@ -3,4 +3,4 @@
 
 
 def teste():
-    return print("oi")
+    return print("ola amigo")
