@@ -108,22 +108,21 @@ class AutoUpdater:
         return True
 
     def _restart(self):
-        """Reinicia o script atual de forma confiável"""
+        """Reinicia o script atual de forma confiável no Windows"""
         try:
             print("🔄 Reiniciando aplicação...")
 
-            # Para Windows
+            python = sys.executable
+            args = sys.argv[:]
+
+            # Para Windows: iniciar novo processo e encerrar o atual
             if sys.platform.startswith('win'):
-                subprocess.Popen([
-                    sys.executable,
-                    *sys.argv
-                ], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+                subprocess.Popen([python] + args, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                os._exit(0)  # Força o encerramento do processo atual
 
-            # Para Linux/MacOS
+            # Para Linux/macOS
             else:
-                os.execv(sys.executable, ['python3'] + sys.argv)
-
-            sys.exit(0)
+                os.execv(python, [python] + args)
 
         except Exception as e:
             print(f"❌ Falha crítica ao reiniciar: {e}")

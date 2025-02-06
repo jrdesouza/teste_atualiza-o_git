@@ -1,7 +1,8 @@
 
-
+import time
 
 
 def teste():
-    return print("ola "
+    print("ola agr vai"
                  "")
+    time.sleep(10)
