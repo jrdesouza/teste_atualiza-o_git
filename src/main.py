@@ -5,7 +5,7 @@ import requests
 import base64
 import subprocess
 from pathlib import Path
-
+from programa.app import teste
 
 class AutoUpdater:
     def __init__(self):
@@ -132,7 +132,7 @@ class AutoUpdater:
             return False
 
 
-from app import teste
+
 
 def main():
     updater = AutoUpdater()
