@@ -121,7 +121,7 @@ def main():
     updater.check_and_apply_updates()
 
     # Seu código principal aqui
-    print("Aplicação em execução...")
+    print("Aplicação em ffexecução...")
     # (ex: loop principal, interface gráfica, etc.)
 
 
