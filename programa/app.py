@@ -3,6 +3,6 @@ import time
 
 
 def teste():
-    print("ok amigos"
+    print("ok"
                  "")
     time.sleep(100)
