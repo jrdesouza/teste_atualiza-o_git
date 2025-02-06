@@ -44,41 +44,68 @@ class AutoUpdater:
 
         if response.status_code == 200:
             try:
-                # Decodifica o conteúdo base64 e remove BOM se existir
-                content = base64.b64decode(response.json()['content']).decode('utf-8-sig')
+                # Decodifica o conteúdo base64
+                content = base64.b64decode(response.json()['content'])
 
                 # Cria os diretórios necessários
                 full_path = self.repo_path / file_path
                 full_path.parent.mkdir(parents=True, exist_ok=True)
 
-                # Escreve o arquivo com codificação UTF-8
-                with open(full_path, 'w', encoding='utf-8') as f:
-                    f.write(content)
+                # Escreve o arquivo (binário ou texto)
+                if isinstance(content, bytes):
+                    with open(full_path, 'wb') as f:
+                        f.write(content)
+                else:
+                    with open(full_path, 'w', encoding='utf-8') as f:
+                        f.write(content.decode('utf-8-sig'))
                 return True
-
-            except UnicodeDecodeError:
-                # Se falhar, trata como arquivo binário
-                content = base64.b64decode(response.json()['content'])
-                with open(full_path, 'wb') as f:
-                    f.write(content)
-                return True
-
+            except Exception as e:
+                print(f"❌ Erro ao baixar {file_path}: {e}")
+                return False
         return False
 
     def _update_files(self):
         headers = {'Authorization': f'token {self.config["GITHUB_TOKEN"]}'}
         response = requests.get(self.config['REPO_API_URL'], headers=headers)
+
         if response.status_code != 200:
+            print("❌ Erro ao listar arquivos do repositório.")
             return False
 
-        for item in response.json():
+        # Lista de arquivos no repositório
+        remote_files = response.json()
+
+        for item in remote_files:
             if item['type'] == 'file' and item['name'] != 'config.json':
-                if not self._download_file(item['path']):
-                    return False
+                remote_path = item['path']
+                local_path = self.repo_path / remote_path
+
+                # Verifica se o arquivo local existe e se foi modificado
+                if not self._is_file_updated(local_path, item['sha']):
+                    print(f"🔄 Atualizando arquivo: {remote_path}")
+                    if not self._download_file(remote_path):
+                        return False
         return True
 
-    # def _restart(self):
-    #     os.execv(sys.executable, ['python'] + sys.argv)
+    def _is_file_updated(self, local_path, remote_sha):
+        """Verifica se o arquivo local está atualizado comparando o SHA."""
+        if not local_path.exists():
+            return False  # Arquivo não existe localmente
+
+        try:
+            # Calcula o SHA do arquivo local
+            import hashlib
+            sha = hashlib.sha1()
+            with open(local_path, 'rb') as f:
+                while chunk := f.read(8192):
+                    sha.update(chunk)
+            local_sha = sha.hexdigest()
+
+            # Compara com o SHA remoto
+            return local_sha == remote_sha
+        except Exception as e:
+            print(f"❌ Erro ao verificar arquivo {local_path}: {e}")
+            return False
 
     def check_and_apply_updates(self):
         remote_version = self._get_remote_version()
