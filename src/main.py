@@ -41,13 +41,28 @@ class AutoUpdater:
     def _download_file(self, file_path):
         headers = {'Authorization': f'token {self.config["GITHUB_TOKEN"]}'}
         response = requests.get(f"{self.config['REPO_API_URL']}/{file_path}", headers=headers)
+
         if response.status_code == 200:
-            content = base64.b64decode(response.json()['content']).decode('utf-8')
-            full_path = self.repo_path / file_path
-            full_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(full_path, 'w') as f:
-                f.write(content)
-            return True
+            try:
+                # Decodifica o conteúdo base64 e remove BOM se existir
+                content = base64.b64decode(response.json()['content']).decode('utf-8-sig')
+
+                # Cria os diretórios necessários
+                full_path = self.repo_path / file_path
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+
+                # Escreve o arquivo com codificação UTF-8
+                with open(full_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                return True
+
+            except UnicodeDecodeError:
+                # Se falhar, trata como arquivo binário
+                content = base64.b64decode(response.json()['content'])
+                with open(full_path, 'wb') as f:
+                    f.write(content)
+                return True
+
         return False
 
     def _update_files(self):
