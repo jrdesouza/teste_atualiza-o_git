@@ -84,27 +84,42 @@ class AutoUpdater:
                 return False
         return False
 
-    def _update_files(self):
+    def _fetch_files_recursive(self, path=""):
+        """Busca arquivos de forma recursiva no repositório do GitHub"""
         headers = {'Authorization': f'token {self.config["GITHUB_TOKEN"]}'}
-        response = requests.get(self.config['REPO_API_URL'], headers=headers)
+        response = requests.get(f"{self.config['REPO_API_URL']}/{path}", headers=headers)
 
         if response.status_code != 200:
-            print("❌ Erro ao listar arquivos do repositório.")
-            return False
+            print(f"❌ Erro ao buscar {path}: {response.status_code}")
+            return []
 
-        # Lista de arquivos no repositório
-        remote_files = response.json()
+        files = response.json()
+        all_files = []
+
+        for item in files:
+            if item['type'] == 'file' and item['name'] != 'config.json':
+                all_files.append(item)
+            elif item['type'] == 'dir':  # Se for uma pasta, buscar recursivamente
+                all_files.extend(self._fetch_files_recursive(item['path']))
+
+        return all_files
+
+    def _update_files(self):
+        """Atualiza todos os arquivos, incluindo os que estão dentro de subpastas"""
+        remote_files = self._fetch_files_recursive()
 
         for item in remote_files:
-            if item['type'] == 'file' and item['name'] != 'config.json':
-                remote_path = item['path']
-                local_path = self.repo_path / remote_path
+            remote_path = item['path']
+            local_path = self.repo_path / remote_path
 
-                # Verifica se o arquivo local existe e se foi modificado
-                if not self._is_file_updated(local_path, item['sha']):
-                    print(f"🔄 Atualizando arquivo: {remote_path}")
-                    if not self._download_file(remote_path):
-                        return False
+            # 🔹 Garantir que subpastas existem antes de salvar
+            local_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Verifica se o arquivo local está atualizado
+            if not self._is_file_updated(local_path, item['sha']):
+                print(f"🔄 Atualizando arquivo: {remote_path}")
+                if not self._download_file(remote_path):
+                    return False
         return True
 
     def _restart(self):
