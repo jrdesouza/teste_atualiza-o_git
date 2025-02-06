@@ -78,7 +78,7 @@ class AutoUpdater:
         return True
 
     def _restart(self):
-        os.execv(sys.executable, ['python'] + sys.argv)
+        main()
 
     def check_and_apply_updates(self):
         remote_version = self._get_remote_version()
