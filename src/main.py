@@ -153,10 +153,56 @@ class AutoUpdater:
                     f.write(remote_version)
                 self._restart()
 
+    def _install_requirements(self):
+        """Instala as dependências do requirements.txt se existir"""
+        requirements_path = self.repo_path / 'requirements.txt'
+
+        if not requirements_path.exists():
+            print("⚠️ Arquivo requirements.txt não encontrado.")
+            return True
+
+        print("📦 Verificando dependências...")
+        try:
+            # Comando para instalar as dependências
+            result = subprocess.run(
+                [sys.executable, '-m', 'pip', 'install', '-r', str(requirements_path)],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+
+            # Mostra o output limpo
+            if result.stdout:
+                print("Saída da instalação:")
+                print(result.stdout)
+
+            print("✅ Dependências instaladas/verificadas com sucesso!")
+            return True
+
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Erro ao instalar dependências: {e.stderr}")
+            return False
+
+    def check_and_apply_updates(self):
+        remote_version = self._get_remote_version()
+        if remote_version and remote_version != self.local_version:
+            print(f"🔍 Nova versão encontrada: {remote_version}")
+            if self._update_files():
+                # Atualiza a versão local primeiro
+                with open(self.repo_path / 'version.txt', 'w') as f:
+                    f.write(remote_version)
+
+                # Instala dependências antes de reiniciar
+                if self._install_requirements():
+                    self._restart()
+
 
 def main():
     updater = AutoUpdater()
     updater.check_and_apply_updates()
+    # Verifica dependências mesmo sem atualizações
+    updater._install_requirements()
 
     # Seu código principal aqui
     print("Aplicação em execução...")
